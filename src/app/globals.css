@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
-button{
-  background-color: rgb(59 130 246 / var(--tw-bg-opacity, 1));
+/* Scrollbar Styling */
+.custom-scrollbar::-webkit-scrollbar {
+width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+background: #2d3748; /* Dark gray */
+/* border-radius: 10px; */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+background: #4B5563; /* Indigo */
+border-radius: 10px;
+}
+
+.custom-bg_text{
+    background: #1F2937;
+    color: #D1D5DB;
 }

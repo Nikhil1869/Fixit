@@ -1,7 +1,8 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/Header";
+// import Header from "@/components/Header";
 import { dbConnect } from "@/lib/mongo";
+import Navbar from "./navbar/page";
 
 export const metadata = {
   title: "Fixit",
@@ -15,7 +16,7 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-          <Header/>
+          <Navbar/>
         {children}
       </body>
     </html>

@@ -1,35 +1,3 @@
-// import { NextResponse } from "next/server";
-// import { createBooking } from "@/queries/bookings";
-// import { dbConnect } from "@/lib/mongo";
-
-// export const POST = async (request) => {
-//   const { username, email, phone, street, city, state, service, date } = await request.json(); 
-
-//   // ✅ Connect to MongoDB
-//   await dbConnect();
-
-//   // ✅ Ensure date is stored correctly
-//   const newBooking = {
-//     username, 
-//     email, 
-//     phone,
-//     street, 
-//     city, 
-//     state,
-//     service,
-//     date: new Date(date), // ✅ Convert to Date format
-//   };
-
-//   // ✅ Store in MongoDB
-//   try {
-//     await createBooking(newBooking);
-//   } catch (err) {
-//     return new NextResponse(err.message, { status: 500 });
-//   }
-
-//   return new NextResponse("Booking has been created", { status: 201 });
-// };
-
 import { NextResponse } from "next/server";
 import { createBooking } from "@/queries/bookings";
 import { getUsersByService } from "@/queries/users"; // ✅ Function to check worker availability
@@ -46,7 +14,7 @@ export const POST = async (request) => {
     const workers = await getUsersByService(service);
     if (workers.length === 0) {
       return NextResponse.json({ message: "No worker available for this service." }, { status: 400 });
-    }
+    } 
 
     // ✅ Ensure date is stored correctly
     const newBooking = {

@@ -19,3 +19,11 @@ export const getBookingsByEmail = async (email, service = null) => {
   }
 };
 
+export async function deleteBooking(username, service, date) {
+  try {
+    await Booking.deleteOne({ username, service, date: new Date(date) });
+  } catch (e) {
+    throw new Error(e);
+  }
+}
+

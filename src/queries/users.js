@@ -9,8 +9,10 @@ export async function createUser(user) {
 }
 
 export const getUsersByService = async (serviceName) => {
-  return await User.find({ service: serviceName }).select("-password").lean();
+  const workers = await User.find({ service: serviceName }).select("-password").lean();
+  return workers; // Ensure it always returns an array (empty if no workers exist)
 };
+
 
 
 export async function getUsersByEmail(email) {
