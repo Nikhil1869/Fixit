@@ -1,12 +1,12 @@
-import React from 'react'
-import DashboardCustomer from '@/components/DashboardCustomer'
+import React from "react";
+import DashboardCustomer from "@/components/DashboardCustomer";
 
 const ProfilePage = () => {
   return (
     <>
-      <DashboardCustomer/>
+      <DashboardCustomer />
     </>
-  )
-}
+  );
+};
 
-export default ProfilePage
+export default ProfilePage;

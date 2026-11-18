@@ -1,12 +1,12 @@
-import BookingPage from '@/components/Booking'
-import React, { Suspense } from 'react'
-
-const Bookingpage = () => {
+import Booking from "@/components/Booking";
+import { requirePageUser } from "@/lib/page-user";
+import { getServiceByName } from "@/data/homeservices";
+import { notFound } from "next/navigation";
+export default async function BookingPage({ searchParams }) {
+  const user = await requirePageUser("customer");
+  const params = await searchParams;
+  if (!getServiceByName(params.service)) notFound();
   return (
-    <Suspense fallback={<div className="text-center p-10 text-white">Loading booking details...</div>}>
-      <BookingPage/>
-    </Suspense>
-  )
+    <Booking service={params.service} address={[user.street, user.city, user.state].join(", ")} />
+  );
 }
-
-export default Bookingpage

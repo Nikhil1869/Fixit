@@ -1,40 +1,22 @@
-import { NextResponse } from "next/server";
-import { createUser } from "@/queries/users";
-
 import bcrypt from "bcryptjs";
 import { dbConnect } from "@/lib/mongo";
+import { User } from "@/model/user-model";
+import { registrationSchema } from "@/lib/validation";
+import { errorResponse, readJson } from "@/lib/http";
+import { rateLimit } from "@/lib/rate-limit";
 
-export const POST = async (request) => {
-  const {username, email, phone, password, street, city, state, category, service} = await request.json();
-  console.log(username, email, password);
-
-  // Create a DB Conenction
-  await dbConnect();
-  // Encrypt the password
-  const hashedPassword = await bcrypt.hash(password, 5);
-  // Form a DB payload
-  const newUser = {
-    username, 
-    email, 
-    phone, 
-    password: hashedPassword,
-    street, 
-    city, 
-    state,
-    category,
-    service
-  }
-  // Update the DB
+export async function POST(request) {
   try {
-    await createUser(newUser);
-  } catch (err) {
-    return new NextResponse(err.mesage, {
-      status: 500,
-    });
+    const data = registrationSchema.parse(await readJson(request));
+    await dbConnect();
+    await rateLimit("register:global", 100, 60 * 60_000);
+    await rateLimit("register:" + data.email, 5, 60 * 60_000);
+    // Existing duplicate identities fail closed until an explicit migration resolves them.
+    await User.init();
+    const password = await bcrypt.hash(data.password, 12);
+    await User.create({ ...data, password });
+    return Response.json({ message: "Account created. Please sign in." }, { status: 201 });
+  } catch (error) {
+    return errorResponse(error);
   }
-
-  return new NextResponse("User has been created", {
-    status: 201,
-  });
-
- }
+}

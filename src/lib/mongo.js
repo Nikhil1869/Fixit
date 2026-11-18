@@ -1,32 +1,27 @@
 import mongoose from "mongoose";
 
-let cached = global.mongoose;
-
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
-}
+const cached = global.mongoose || (global.mongoose = { conn: null, promise: null });
 
 export async function dbConnect() {
-  if (cached.conn) {
-    return cached.conn;
+  if (cached.conn && mongoose.connection.readyState === 1) return cached.conn;
+  if (cached.conn && mongoose.connection.readyState === 0) {
+    cached.conn = null;
+    cached.promise = null;
   }
-
+  if (!process.env.MONGODB_URI) throw new Error("Database configuration is missing.");
   if (!cached.promise) {
-    const opts = {
+    cached.promise = mongoose.connect(process.env.MONGODB_URI, {
       bufferCommands: false,
-    };
-
-    cached.promise = mongoose.connect(String(process.env.MONGODB_URI), opts).then((mongoose) => {
-      return mongoose;
+      serverSelectionTimeoutMS: 5000,
+      maxPoolSize: 10,
     });
   }
-  
   try {
     cached.conn = await cached.promise;
-  } catch (e) {
+    return cached.conn;
+  } catch {
+    cached.conn = null;
     cached.promise = null;
-    throw new Error(e);
+    throw new Error("Database connection unavailable.");
   }
-
-  return cached.conn;
 }

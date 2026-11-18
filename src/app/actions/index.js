@@ -1,30 +1,20 @@
-'use server'
+"use server";
 
-import { signIn , signOut } from "@/auth";
-import { redirect } from "next/dist/server/api-utils";
+import { signIn, signOut } from "@/auth";
 
-export async function doSocialSignIn(formData){
-    const action = formData.get('action');
-    if (!action) {
-        throw new Error('Action is required');
-    }
-    await signIn(action, { redirectTo: "/homeservices" });
-    console.log(action);
+export async function doSignOut() {
+  await signOut({ redirectTo: "/" });
 }
 
-export async function doSignOut(){
-    await signOut({ redirectTo: '/' });
-}
-
-export async function doCredentialSignIn(formData){
-    try {
-        const response = await signIn('credentials', {
-            username: formData.get('username'),
-            password: formData.get('password'),
-            redirect: false,
-        });
-        return response;
-    } catch (error) {
-        throw new Error(error);
-    }
+export async function doCredentialSignIn(formData) {
+  try {
+    const response = await signIn("credentials", {
+      username: formData.get("username"),
+      password: formData.get("password"),
+      redirect: false,
+    });
+    return { ok: true };
+  } catch (error) {
+    return { error: { message: "Unable to sign in. Check your credentials or try again later." } };
+  }
 }

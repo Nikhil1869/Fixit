@@ -1,40 +1,22 @@
-// import { NextResponse } from "next/server";
-// import { dbConnect } from "@/lib/mongo";
-// import { deleteBooking } from "@/queries/bookings";
+import { requireUser } from "@/lib/current-user";
+import { errorResponse, HttpError, readJson } from "@/lib/http";
+import { bookingActionSchema } from "@/lib/validation";
+import { Booking } from "@/model/booking-model";
 
-// export const POST = async (request) => {
-//   try {
-//     const { username, service, date } = await request.json();
-
-//     // ✅ Connect to MongoDB
-//     await dbConnect();
-
-//     // ✅ Delete declined booking from `bookings`
-//     await deleteBooking(username, service, date);
-
-//     return NextResponse.json({ message: "Booking declined and removed." }, { status: 200 });
-//   } catch (err) {
-//     return NextResponse.json({ message: err.message }, { status: 500 });
-//   }
-// };
-
-
-import { NextResponse } from "next/server";
-import { dbConnect } from "@/lib/mongo";
-import { deleteBooking } from "@/queries/bookings";
-
-export const POST = async (request) => {
+export async function POST(request) {
   try {
-    const { username, service, date } = await request.json();
-
-    // ✅ Connect to MongoDB
-    await dbConnect();
-
-    // ✅ Delete declined booking from `bookings`
-    await deleteBooking(username, service, date);
-
-    return NextResponse.json({ message: "Booking declined and removed." }, { status: 200 });
-  } catch (err) {
-    return NextResponse.json({ message: err.message }, { status: 500 });
+    const user = await requireUser("provider");
+    const { bookingId } = bookingActionSchema.parse(await readJson(request));
+    const booking = await Booking.findOneAndUpdate(
+      { _id: bookingId, service: user.service, status: "pending", customerId: { $exists: true } },
+      { $addToSet: { declinedBy: user._id } },
+      { new: true },
+    );
+    if (!booking) throw new HttpError(404, "This booking is not available to you.");
+    return Response.json({
+      message: "Request declined for your account. Other providers may still accept it.",
+    });
+  } catch (error) {
+    return errorResponse(error);
   }
-};
+}

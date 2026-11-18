@@ -1,10 +1,8 @@
-import CustomerBookings from '@/components/CustomerBookings'
-import React from 'react'
+import CustomerBookings from "@/components/CustomerBookings";
+import React from "react";
 
 const MyBookingsPage = () => {
-  return (
-    <CustomerBookings/>
-  )
-}
+  return <CustomerBookings />;
+};
 
-export default MyBookingsPage
+export default MyBookingsPage;
