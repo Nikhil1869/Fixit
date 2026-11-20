@@ -17,6 +17,8 @@ const env = {
   AUTH_SECRET: randomBytes(48).toString("base64"),
   AUTH_URL: origin,
   AUTH_TRUST_HOST: "true",
+  GROQ_API_KEY: "",
+  AI_FREE_PLAN_CONFIRMED: "false",
 };
 let server;
 let browser;

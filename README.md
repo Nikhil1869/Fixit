@@ -4,6 +4,14 @@ FIXIT is a team-built service platform. Customers find a service and request an
 available visit; providers manage their hours, accept requests and record progress.
 This portfolio extension improves security, booking consistency and usability.
 
+The new read-only generative assistant uses GroqCloud's Free plan through a private
+server API. The UI, conversation context, catalog/availability tools and authorized
+booking summaries are implemented and mock-tested. **Live model verification is
+pending; no live AI calls were made during implementation.** See
+[chatbot setup](docs/CHATBOT_SETUP.md), [architecture](docs/CHATBOT_ARCHITECTURE.md)
+and [test report](docs/CHATBOT_TEST_REPORT.md). It requires a private `GROQ_API_KEY`,
+not an OpenAI key, and fails closed without confirmed Free-plan configuration.
+
 **Local verification is recorded in [PHASE_REPORT.md](PHASE_REPORT.md). Public
 deployment and relicensing await the team's agreement. No live demo is claimed.**
 

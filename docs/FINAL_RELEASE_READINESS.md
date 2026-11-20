@@ -472,3 +472,11 @@ not imply that an explicitly limited or unexecuted manual check passed.
 | Team publication/relicensing arrangement            | BLOCKED | Explicitly pending team confirmation                                                     |
 | Approved public HTTPS deployment                    | BLOCKED | No deployment performed or URL verified                                                  |
 | Production completion                               | BLOCKED | Release must not be declared complete                                                    |
+
+# Subsequent chatbot feature
+
+The later `feature/fixit-ai-chatbot` extension is documented separately in
+[CHATBOT_TEST_REPORT.md](CHATBOT_TEST_REPORT.md), with
+[Free-plan setup and pending live verification](CHATBOT_SETUP.md). The release
+evidence below describes the preceding production-readiness phase and is not a
+claim that the chatbot has been live verified or deployed. Existing blockers remain.

@@ -2,6 +2,7 @@ import "./globals.css";
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import ChatbotShell from "@/components/ChatbotShell";
 
 export const metadata = {
   title: "Fixit",
@@ -15,6 +16,7 @@ export default async function RootLayout({ children }) {
         <Navbar />
         {children}
         <Footer />
+        <ChatbotShell />
       </body>
     </html>
   );

@@ -51,3 +51,35 @@ Throttles: login 10/account/15 minutes; registration 100 total/hour and 5/email/
 creation 30/account/minute. Counters are persistent shared MongoDB windows. The global
 registration cap is a conservative demo choice; trusted-ingress per-network limits
 would improve fairness for a real public service.
+
+# Generative assistant addition
+
+`GET /api/chat` returns `{ available, mode }` with private/no-store caching.
+It validates configuration only; it does not call Groq or verify billing/model access.
+
+`POST /api/chat` accepts:
+
+```json
+{
+  "messages": [{ "role": "user", "content": "How can I book an AC technician?" }],
+  "shareBookings": false
+}
+```
+
+Only alternating user/assistant roles are accepted, beginning/ending with user.
+Messages are untrusted conversation data, never system instructions or identity.
+Limits: 9 messages, user text 1,500 characters, each assistant text 4,000, combined
+10,000, streamed body 16 KiB. Unknown fields, supplied account IDs and tool roles
+are rejected. Authenticated customer summaries require explicit `shareBookings`
+and the current server session. Anonymous service help remains available.
+
+Success: `{ mode: "ai", message, evidence }`. Evidence contains only allowlisted
+catalog links, aggregate availability snapshots or the current customer's minimal
+booking summaries. The model has no mutation capability. Errors: 400 invalid/context
+budget, 403 origin, 413 size, 415 media type, 429 application/provider quota with
+Retry-After, 502 invalid model response, 503 unavailable configuration/provider/DB,
+504 provider timeout. Lookup-specific denial is a safe tool error in the generated
+conversation, not authorization to read another account. Responses are no-store.
+
+Full controls and configuration: [chatbot architecture](docs/CHATBOT_ARCHITECTURE.md)
+and [setup](docs/CHATBOT_SETUP.md). Live inference remains unverified.

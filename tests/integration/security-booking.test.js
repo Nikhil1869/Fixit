@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 
 const context = new AsyncLocalStorage();
+vi.mock("server-only", () => ({}));
 vi.mock("@/auth", () => ({ auth: async () => context.getStore() || null }));
 
 import { POST as register } from "@/app/api/register/route";
@@ -24,6 +25,15 @@ import { GET as listBookings } from "@/app/api/bookings/route";
 import { PATCH as updateProfile } from "@/app/api/profile/route";
 import { availableSlots } from "@/lib/availability";
 import { auditMigration } from "../../scripts/lib/migration-audit.mjs";
+import { executeChatTool } from "@/lib/chat/tools";
+import {
+  withChatLease,
+  reserveModelBudget,
+  observeProviderLimits,
+  inputTokenEstimate,
+} from "@/lib/chat/budget";
+import { systemKnowledge } from "@/lib/chat/knowledge";
+import { chatTools } from "@/lib/chat/tools";
 
 let replica, customer, otherCustomer, provider, otherProvider, wrongProvider;
 const asUser = (user, fn) =>
@@ -70,6 +80,7 @@ beforeEach(async () => {
     Booking.deleteMany({}),
     AcceptedBooking.deleteMany({}),
     mongoose.connection.collection("ratelimits").deleteMany({}),
+    mongoose.connection.collection("chatcontrols").deleteMany({}),
   ]);
   const base = {
     password: await bcrypt.hash("test-password-123", 4),
@@ -106,6 +117,173 @@ beforeEach(async () => {
 });
 
 describe("security boundaries and persistence", () => {
+  it("initializes a newly registered model during a cold connection without caching an init failure", async () => {
+    const isolated = new mongoose.Mongoose();
+    try {
+      const connecting = isolated.connect(
+        replica.getUri("fixit_cold_model_test"),
+        mongo.mongoConnectionOptions,
+      );
+      const ColdModel = isolated.model(
+        "ColdModel",
+        new mongoose.Schema({ value: { type: String, unique: true } }),
+      );
+      await Promise.all([connecting, ColdModel.init()]);
+      await ColdModel.create({ value: "synthetic" });
+      expect(await ColdModel.countDocuments()).toBe(1);
+      expect(
+        (await ColdModel.collection.indexes()).some(
+          (index) => index.unique && index.key.value === 1,
+        ),
+      ).toBe(true);
+    } finally {
+      await isolated.disconnect();
+    }
+  });
+  it("chat shares a single lease across concurrent callers and releases it even on failure", async () => {
+    let release;
+    let acquired;
+    const ready = new Promise((resolve) => {
+      acquired = resolve;
+    });
+    const first = withChatLease(async () => {
+      acquired();
+      await new Promise((resolve) => {
+        release = resolve;
+      });
+    });
+    await ready;
+    await expect(withChatLease(async () => "second")).rejects.toMatchObject({ status: 429 });
+    release();
+    await first;
+    await expect(
+      withChatLease(async () => {
+        throw new Error("fixture");
+      }),
+    ).rejects.toThrow("fixture");
+    expect(await withChatLease(async () => "released")).toBe("released");
+  });
+  it("chat reserves token budgets and honors provider cooldown across processes", async () => {
+    const messages = [
+      { role: "system", content: systemKnowledge() },
+      { role: "user", content: "How can I book an AC technician?" },
+    ];
+    expect(inputTokenEstimate(messages, chatTools)).toBeLessThan(5000);
+    await reserveModelBudget(messages, chatTools);
+    // A normal two-call tool turn must fit the conservative minute budget.
+    await reserveModelBudget(
+      [
+        ...messages,
+        {
+          role: "assistant",
+          content: null,
+          tool_calls: [
+            {
+              id: "fixture",
+              type: "function",
+              function: { name: "suggest_service", arguments: '{"service":"ACTechnician"}' },
+            },
+          ],
+        },
+        {
+          role: "tool",
+          tool_call_id: "fixture",
+          content: '{"service":"ACTechnician","href":"/homeservices/service/ACTechnician"}',
+        },
+      ],
+      chatTools,
+    );
+    await expect(
+      reserveModelBudget(
+        [{ role: "user", content: "Unusual symbols 你好🌍".repeat(3000) }],
+        chatTools,
+      ),
+    ).rejects.toMatchObject({ status: 400 });
+    await observeProviderLimits(new Headers({ "retry-after": "120" }), 429);
+    await expect(reserveModelBudget(messages, chatTools)).rejects.toMatchObject({ status: 429 });
+    await expect(withChatLease(async () => "blocked")).rejects.toMatchObject({ status: 429 });
+  });
+  it("chat stops when known remaining tokens cannot cover the next request", async () => {
+    await observeProviderLimits(
+      new Headers({ "x-ratelimit-remaining-tokens": "10", "x-ratelimit-reset-tokens": "2m3s" }),
+    );
+    await expect(
+      reserveModelBudget([{ role: "user", content: "hello" }], []),
+    ).rejects.toMatchObject({ status: 429 });
+  });
+  it("weighted token reservations cannot exceed the shared application budget", async () => {
+    await rateLimit("chat-budget-fixture", 1000, 60000, 700);
+    await expect(rateLimit("chat-budget-fixture", 1000, 60000, 400)).rejects.toMatchObject({
+      status: 429,
+    });
+    await expect(rateLimit("chat-budget-fixture", 1000, 60000, -10)).rejects.toThrow(
+      "Invalid rate-limit cost",
+    );
+  });
+  
+  it("chat denies anonymous/provider booking reads and requires explicit sharing", async () => {
+    expect(
+      (await executeChatTool("my_bookings", { scope: "mine" }, { shareBookings: false })).error,
+    ).toContain("sharing is off");
+
+    await expect(
+      asUser(null, () =>
+        executeChatTool("my_bookings", { scope: "mine" }, { shareBookings: true }),
+      ),
+    ).rejects.toMatchObject({ status: 401 });
+
+    await expect(
+      asUser(provider, () =>
+        executeChatTool("my_bookings", { scope: "mine" }, { shareBookings: true }),
+      ),
+    ).rejects.toMatchObject({ status: 403 });
+  });
+
+  it("chat only reads the current customer's minimal booking data, even under cross-account injection", async () => {
+    await create(customer);
+    await create(otherCustomer, { ...payload(), time: "13:00" });
+    const result = await asUser(customer, () =>
+      executeChatTool("my_bookings", {scope:"mine"}, { shareBookings: true }),
+    );
+    expect(result.bookings).toHaveLength(1);
+    expect(result.bookings[0].time).toBe("12:00");
+    expect(Object.keys(result.bookings[0]).sort()).toEqual(["date", "service", "status", "time"]);
+    await expect(
+      asUser(customer, () =>
+        executeChatTool(
+          "my_bookings",
+          { customerId: String(otherCustomer._id) },
+          { shareBookings: true },
+        ),
+      ),
+    ).rejects.toBeDefined();
+    const before = await Booking.find().lean();
+    expect(
+      (
+        await executeChatTool(
+          "cancel_booking",
+          { id: String(before[0]._id) },
+          { shareBookings: true },
+        )
+      ).error,
+    ).toContain("not permitted");
+    expect(await Booking.find().lean()).toEqual(before);
+  });
+  it("chat returns real aggregate availability and rejects invented service names", async () => {
+    const result = await executeChatTool(
+      "lookup_availability",
+      { service: "Plumber", date: payload().date },
+      { shareBookings: false },
+    );
+    expect(result.slots).toEqual(await availableSlots("Plumber", payload().date));
+    expect(JSON.stringify(result)).not.toContain(provider.email);
+    await expect(
+      executeChatTool("suggest_service", { service: "InventedService" }, {}),
+    ).rejects.toBeDefined();
+    expect(await executeChatTool("suggest_service", { service: "ACTechnician" }, {})).toMatchObject(
+      { href: "/homeservices/service/ACTechnician" },
+    );
+  });
   it("rejects a signed identity after its account is removed", async () => {
     await User.deleteOne({ _id: customer._id });
     expect((await asUser(customer, () => getUser())).status).toBe(401);

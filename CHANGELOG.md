@@ -29,3 +29,18 @@
   strict typing for booking policy, CI and deployment/migration documentation.
 
 No production migration or deployment is claimed. Publication/relicensing await team approval.
+
+# 2026-11-18 — Groq generative assistant
+
+- Added responsive session-only chat, follow-up context, accessible modal controls,
+  retry/clear states and explicit unconfigured behavior.
+- Added `/api/chat` with the official OpenAI-compatible SDK restricted to Groq,
+  reviewed model IDs, Free-plan attestation and no live/paid fallback.
+- Grounded service links, aggregate slots and opt-in customer booking summaries in
+  existing catalog and authorized read APIs; no booking mutations are exposed.
+- Added shared request/token budgets, concurrency lease, provider cooldowns,
+  bounded context/output, timeouts, safe errors/rendering and mocked regression tests.
+- Documented setup, privacy, current Free-plan quota references and 18 manual prompts.
+  Live model verification is pending and no deployment/push was performed.
+- Fixed a reproduced cold-start model initialization failure by bounding MongoDB
+  command buffering at five seconds; added a regression and reran restart checks.

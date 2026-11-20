@@ -84,3 +84,16 @@ it when Next's dependency catches up. See the official
 and [follow-up fix](https://github.com/postcss/postcss/security/advisories/GHSA-fxqj-rqcc-2cmp).
 The full local audit on 2026-11-17 returned zero known vulnerabilities and exit 0.
 This is a registry snapshot, not a guarantee that no vulnerability exists.
+
+# Chatbot verification addition — 2026-11-18
+
+See [CHATBOT_TEST_REPORT.md](docs/CHATBOT_TEST_REPORT.md) for the current feature's
+exact results. Unit tests mock the Groq transport, including provider 429/timeouts,
+malformed output and no retry/fallback. Disposable-MongoDB tests cover booking
+ownership, tool read-only behavior, token reservations, concurrency and cooldowns.
+Browser tests intercept successful AI replies and test the actual missing-key path.
+The 18-prompt corpus checks forwarding/follow-up history with mocks; it does not
+prove live semantic quality. No paid or live AI requests are part of automated CI.
+
+The user will perform [manual Groq Free-plan verification](docs/CHATBOT_SETUP.md)
+later. Existing historical release-test results below retain their original scope.

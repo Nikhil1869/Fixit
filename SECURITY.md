@@ -58,3 +58,21 @@ Never commit local `.env*` files; only `.env.example` is allowed.
 
 Report suspected issues privately to the repository maintainer; do not include
 secrets, personal customer data or exploit payloads in public issues.
+
+# Chatbot security addition — 2026-11-18
+
+The Groq assistant is read-only. Server auth and existing owned-booking reads are
+enforced independently of prompts. Model tools cannot mutate bookings or execute
+arbitrary queries/code. Opt-in summaries exclude IDs and contact details. User text
+and summaries are sent externally; avoid secrets and review provider data controls.
+React escapes output, with only server-created links rendered. Session chat is not
+persisted or logged. Shared MongoDB request/token budgets, a singleton lease, quota
+cooldowns and no automatic retries/fallback constrain abuse. Configuration accepts
+only Groq's fixed HTTPS endpoint and reviewed model IDs, plus a manual Free-plan
+attestation. The attestation does not independently prove the account's billing tier.
+
+No live requests were authorized or executed. No actual API key was added, and
+existing `.env.local` settings were not edited. CI uses mocks and clears Groq keys
+in browser/restart harnesses. Existing credential-incident and deployment blockers
+remain. See [chatbot security boundaries](docs/CHATBOT_ARCHITECTURE.md) and
+[verification guide](docs/CHATBOT_SETUP.md).

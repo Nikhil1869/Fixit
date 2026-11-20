@@ -44,3 +44,13 @@ The team has not established a formal open-source license or documented deployme
 permission. Public deployment and relicensing remain pending team confirmation.
 No new license is added; no remote push, public deployment or message to teammates
 has been sent. Preserve applicable notices once the team agrees on the arrangement.
+
+# Generative assistant extension — 2026-11-18
+
+On `feature/fixit-ai-chatbot`, Nikhil's portfolio extension now includes AI-assisted
+implementation of the Groq server integration, reusable chat UI, bounded session
+context, read-only knowledge tools, quota/security controls and automated tests.
+These additions reuse the original team's catalog and the earlier security/booking
+improvements; they do not replace or reattribute the original team's work.
+Live provider inference and deployment are not claimed. See
+[chatbot test report](docs/CHATBOT_TEST_REPORT.md) for evidence and limits.

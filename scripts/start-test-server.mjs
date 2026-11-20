@@ -19,6 +19,10 @@ const child = spawn(
       AUTH_SECRET: randomBytes(48).toString("base64"),
       AUTH_URL: "http://127.0.0.1:3100",
       AUTH_TRUST_HOST: "true",
+      // Browser tests intercept chat requests; never inherit a paid provider key.
+      GROQ_API_KEY: "",
+      AI_FREE_PLAN_CONFIRMED: "false",
+      AI_MODEL: "",
     },
   },
 );
