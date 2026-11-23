@@ -1,10 +1,4 @@
-import React from 'react'
-import Footer from '@/components/Footer'
-
-const page = () => {
-  return (
-    <Footer/>
-  )
+import { redirect } from "next/navigation";
+export default function LegacyPage() {
+  redirect("/");
 }
-
-export default page

@@ -1,25 +1,22 @@
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-// import Header from "@/components/Header";
-import { dbConnect } from "@/lib/mongo";
-import Navbar from "./navbar/page";
+
+import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import ChatbotShell from "@/components/ChatbotShell";
 
 export const metadata = {
   title: "Fixit",
-  description: "Simplyfying service booking and management",
-}
+  description: "Service booking, thoughtfully organized.",
+};
 
 export default async function RootLayout({ children }) {
-
-  const connection = await dbConnect();
-
   return (
     <html lang="en">
       <body>
-          <Navbar/>
+        <Navbar />
         {children}
-        <Footer/>
+        <Footer />
+        <ChatbotShell />
       </body>
     </html>
   );

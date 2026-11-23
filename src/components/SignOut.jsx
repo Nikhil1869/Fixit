@@ -1,13 +1,10 @@
-import { doSignOut } from "@/app/actions"
-
-const SignOut = () => {
+import { doSignOut } from "@/app/actions";
+export default function SignOut() {
   return (
     <form action={doSignOut}>
-      <button className="bg-red-500 p-1 text-white rounded" type="submit">
-        SignOut 
+      <button className="btn-secondary btn-small" type="submit">
+        Sign out
       </button>
     </form>
-  )
+  );
 }
-
-export default SignOut

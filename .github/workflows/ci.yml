@@ -1,0 +1,44 @@
+name: Quality gates
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      AUTH_SECRET: ci-only-placeholder-not-used-in-production-1234567890
+      AUTH_URL: http://localhost:3000
+      AUTH_TRUST_HOST: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+      GROQ_API_KEY: ""
+      AI_FREE_PLAN_CONFIRMED: "false"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24"
+      - run: corepack enable
+      - run: corepack prepare yarn@1.22.22 --activate
+      - run: yarn install --frozen-lockfile --non-interactive
+      - run: yarn format:check
+      - run: yarn lint
+      - run: yarn typecheck
+      - run: yarn test:unit
+      - run: yarn test:integration
+      - run: yarn test:migration
+      - run: yarn build
+      - run: yarn playwright install --with-deps chromium firefox webkit
+      - run: yarn test:e2e
+      - run: yarn test:restart
+      - run: yarn audit
+      - name: Ensure environment files are not tracked
+        shell: bash
+        run: |
+          if git ls-files | grep -E '(^|/)\.env($|\.)' | grep -v '^\.env.example$'; then
+            echo 'Local environment file is tracked'
+            exit 1
+          fi

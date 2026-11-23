@@ -1,17 +1,19 @@
-"use client"
-
-import SignIn from '@/components/SignIn';
-// import SocialSignIn from '@/components/SocialSignIn';
-
-export default function SignInPage() {
-    return (
-        <>
-            <div className="flex justify-center items-center min-h-screen bg-gray-800">
-                <div className="flex-col bg-gray-700 text-gray-300 p-8 rounded-lg shadow-md w-full max-w-md mb-12">
-                    <h1 className="text-3xl font-bold mb-6 text-center text-gray-300">Sign In</h1>
-                    <SignIn />
-                </div>
-            </div>
-        </>
-    );
+import SignIn from "@/components/SignIn";
+export default async function SignInPage({ searchParams }) {
+  const params = await searchParams;
+  return (
+    <main className="auth-container">
+      <div className="surface">
+        <span className="eyebrow">Good to see you again</span>
+        <h1 className="page-title">Welcome back.</h1>
+        <p className="subtle mb-7">Sign in to plan your next service or manage your work.</p>
+        {params.registered && (
+          <p className="feedback success" role="status">
+            Account created. You can now sign in.
+          </p>
+        )}
+        <SignIn />
+      </div>
+    </main>
+  );
 }

@@ -15,6 +15,7 @@
 
 # next.js
 /.next/
+/.next-dev/
 /out/
 
 # production
@@ -31,7 +32,13 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env
+.env*
+!.env.example
+
+# local test artifacts
+/test-results/
+/playwright-report/
+/artifacts/
 
 # vercel
 .vercel

@@ -1,5 +1,5 @@
-import AboutDevelopers from '../../components/AboutDevelopers';
+import AboutDevelopers from "../../components/AboutDevelopers";
 
 export default function AboutUs() {
-    return <AboutDevelopers />;
+  return <AboutDevelopers />;
 }
